@@ -21,7 +21,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // Note: feel free to play around with this or do something completely different
-double ref_v = 20;
+double ref_v = 30;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should establish
@@ -55,9 +55,9 @@ class FG_eval {
 		AD<double> cost = 0;
 
 		AD<double> cte_cost_factor = 1.0;
-		AD<double> epsi_cost_factor = 1.0;
+		AD<double> epsi_cost_factor = 10.0;
 		AD<double> ev_cost_factor = 1.0;
-		AD<double> delta_cost_factor = 10.0;
+		AD<double> delta_cost_factor = 30.0;
 		AD<double> a_cost_factor = 1.0;
 		AD<double> deltaD_cost_factor = 10.0;
 		AD<double> aD_cost_factor = 1.0;
@@ -195,8 +195,10 @@ vector<vector<double>> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // The upper and lower limits of delta are set to -25 and 25 degrees (values in radians).
   // Note: Feel free to change this to something else.
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    // vars_lowerbound[i] = -0.436332;
+    // vars_upperbound[i] = 0.436332;
+		vars_lowerbound[i] = -0.336332;
+    vars_upperbound[i] = 0.336332;
   }
 
   // Acceleration/decceleration upper and lower limits.
