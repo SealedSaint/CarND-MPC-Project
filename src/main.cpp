@@ -191,7 +191,7 @@ int main() {
           // around the track with 100ms latency.
           //
           // TODO: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
-          // this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
