@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 size_t N = 10;
-double dt = 0.3;
+double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,7 +21,7 @@ double dt = 0.3;
 const double Lf = 2.67;
 
 // Note: feel free to play around with this or do something completely different
-double ref_v = 10;
+double ref_v = 20;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should establish
