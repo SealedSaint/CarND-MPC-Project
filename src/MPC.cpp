@@ -5,8 +5,8 @@
 
 using CppAD::AD;
 
-size_t N = 30;
-double dt = 0.1;
+size_t N = 10;
+double dt = 0.3;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,7 +21,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // Note: feel free to play around with this or do something completely different
-double ref_v = 5;
+double ref_v = 10;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should establish
@@ -224,8 +224,7 @@ vector<vector<double>> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
 
-  // NOTE: You don't have to worry about these options
-  // options for IPOPT solver
+  // Note: You don't have to worry about these options for IPOPT solver
   std::string options;
   // Uncomment this if you'd like more print information
   options += "Integer print_level  0\n";
@@ -238,7 +237,7 @@ vector<vector<double>> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   options += "Sparse  true        reverse\n";
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
-  options += "Numeric max_cpu_time          0.5\n";
+  options += "Numeric max_cpu_time          1.0\n";
 
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;

@@ -65,7 +65,7 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order)
 
 vector<vector<double>> transformVectors(
 	double x1, double y1, double psi,
-	vector<double> ptsx, vector<double>ptsy
+	vector<double> ptsx, vector<double> ptsy
 ) {
 	assert(ptsx.size() == ptsy.size());
 	vector<vector<double>> finals;
@@ -104,12 +104,7 @@ int main() {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-					Eigen::VectorXd eig_ptsx = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx.data(), ptsx.size());
-					Eigen::VectorXd eig_ptsy = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy.data(), ptsy.size());
-
-					auto coeffs = polyfit(eig_ptsx, eig_ptsy, 3);
-
-          double px = j[1]["x"];
+					double px = j[1]["x"];
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
@@ -119,18 +114,26 @@ int main() {
 					vector<double> ptsx_car = transformed[0];
 					vector<double> ptsy_car = transformed[1];
 
-					double cte = polyeval(coeffs, px) - py;
+					Eigen::VectorXd eig_ptsx = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx_car.data(), ptsx_car.size());
+					Eigen::VectorXd eig_ptsy = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy_car.data(), ptsy_car.size());
+					auto coeffs = polyfit(eig_ptsx, eig_ptsy, 3);
 
-					double derivative = 3.0*coeffs[3]*pow(px, 2) + 2.0*coeffs[2]*px + coeffs[1];
-				  double epsi = psi - atan(derivative);
+					double x_car = 0.0;
+					double y_car = 0.0;
+					double psi_car = 0.0;
+
+					double cte = polyeval(coeffs, x_car) - y_car;
+
+					double derivative = 3.0*coeffs[3]*pow(x_car, 2) + 2.0*coeffs[2]*x_car + coeffs[1];
+				  double epsi = psi_car - atan(derivative);
 
 					Eigen::VectorXd state(6);
-				  state << px, py, psi, v, cte, epsi;
+				  state << x_car, y_car, psi_car, v, cte, epsi;
 
-					std::cout << "WE ARE HERE (x, y, psi): (" << px << "," << py << "," << psi << ")" << std::endl;
-					std::cout << "NEXT POINTS (x then y):" << std::endl;
-					for (auto const& c : ptsx) std::cout << c << ' '; std::cout << std::endl;
-					for (auto const& c : ptsy) std::cout << c << ' '; std::cout << std::endl;
+					// std::cout << "WE ARE HERE (x, y, psi): (" << px << "," << py << "," << psi << ")" << std::endl;
+					// std::cout << "NEXT POINTS (x then y):" << std::endl;
+					// for (auto const& c : ptsx) std::cout << c << ' '; std::cout << std::endl;
+					// for (auto const& c : ptsy) std::cout << c << ' '; std::cout << std::endl;
 
 					// Steering angle and throttle are between [-1, 1]
 					vector<vector<double>> vals = mpc.Solve(state, coeffs);
@@ -154,12 +157,12 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 					// Transform ptsx and ptsy into car coordinates
-					transformed = transformVectors(px, py, psi, x_vals, y_vals);
-					vector<double> x_vals_car = transformed[0];
-					vector<double> y_vals_car = transformed[1];
+					// transformed = transformVectors(px, py, psi, x_vals, y_vals);
+					// vector<double> x_vals_car = transformed[0];
+					// vector<double> y_vals_car = transformed[1];
 
-					mpc_x_vals = x_vals_car;
-					mpc_y_vals = y_vals_car;
+					mpc_x_vals = x_vals;
+					mpc_y_vals = y_vals;
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -188,7 +191,7 @@ int main() {
           // around the track with 100ms latency.
           //
           // TODO: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          // this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
