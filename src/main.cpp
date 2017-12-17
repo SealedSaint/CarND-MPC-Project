@@ -42,10 +42,8 @@ double polyeval(Eigen::VectorXd coeffs, double x) {
 }
 
 // Fit a polynomial.
-// Adapted from
-// https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
-Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
-                        int order) {
+// Adapted from https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
+Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order) {
   assert(xvals.size() == yvals.size());
   assert(order >= 1 && order <= xvals.size() - 1);
   Eigen::MatrixXd A(xvals.size(), order + 1);
@@ -65,19 +63,38 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
+vector<vector<double>> transformVectors(
+	double x1, double y1, double psi,
+	vector<double> ptsx, vector<double>ptsy
+) {
+	assert(ptsx.size() == ptsy.size());
+	vector<vector<double>> finals;
+	vector<double> newx;
+	vector<double> newy;
+
+	for(int i = 0; i < ptsx.size(); ++i) {
+		double x2 = ptsx[i];
+		double y2 = ptsy[i];
+		newx.push_back(cos(psi)*x2 + sin(psi)*y2 - (cos(psi)*x1 + sin(psi)*y1));
+		newy.push_back(-sin(psi)*x2 + cos(psi)*y2 + sin(psi)*x1 - cos(psi)*y1);
+	}
+
+	finals = {newx, newy};
+	return finals;
+}
+
 int main() {
   uWS::Hub h;
 
   // MPC is initialized here!
   MPC mpc;
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-                     uWS::OpCode opCode) {
+  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    // cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -87,32 +104,62 @@ int main() {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
+					Eigen::VectorXd eig_ptsx = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx.data(), ptsx.size());
+					Eigen::VectorXd eig_ptsy = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy.data(), ptsy.size());
+
+					auto coeffs = polyfit(eig_ptsx, eig_ptsy, 3);
+
           double px = j[1]["x"];
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          double steer_value;
-          double throttle_value;
+					// Transform ptsx and ptsy into car coordinates
+					vector<vector<double>> transformed = transformVectors(px, py, psi, ptsx, ptsy);
+					vector<double> ptsx_car = transformed[0];
+					vector<double> ptsy_car = transformed[1];
+
+					double cte = polyeval(coeffs, px) - py;
+
+					double derivative = 3.0*coeffs[3]*pow(px, 2) + 2.0*coeffs[2]*px + coeffs[1];
+				  double epsi = psi - atan(derivative);
+
+					Eigen::VectorXd state(6);
+				  state << px, py, psi, v, cte, epsi;
+
+					std::cout << "WE ARE HERE (x, y, psi): (" << px << "," << py << "," << psi << ")" << std::endl;
+					std::cout << "NEXT POINTS (x then y):" << std::endl;
+					for (auto const& c : ptsx) std::cout << c << ' '; std::cout << std::endl;
+					for (auto const& c : ptsy) std::cout << c << ' '; std::cout << std::endl;
+
+					// Steering angle and throttle are between [-1, 1]
+					vector<vector<double>> vals = mpc.Solve(state, coeffs);
+					vector<double> actuations = vals[0];
+					vector<double> x_vals = vals[1];
+					vector<double> y_vals = vals[2];
+
+					double steer_value = actuations[0];
+					double throttle_value = actuations[1];
 
           json msgJson;
-          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
-          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          // Note: Remember to divide by deg2rad(25) before you send the steering value back.
+          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25)] instead of [-1, 1].
+          msgJson["steering_angle"] = -1.0 * steer_value / deg2rad(25);
           msgJson["throttle"] = throttle_value;
 
-          //Display the MPC predicted trajectory 
+          //Display the MPC predicted trajectory
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
+					// Transform ptsx and ptsy into car coordinates
+					transformed = transformVectors(px, py, psi, x_vals, y_vals);
+					vector<double> x_vals_car = transformed[0];
+					vector<double> y_vals_car = transformed[1];
+
+					mpc_x_vals = x_vals_car;
+					mpc_y_vals = y_vals_car;
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -123,22 +170,24 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
+					next_x_vals = ptsx_car;
+					next_y_vals = ptsy_car;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          // std::cout << msg << std::endl;
+
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
           //
-          // Feel free to play around with this value but should be to drive
+          // Feel free to play around with this value, but should be able to drive
           // around the track with 100ms latency.
           //
-          // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
-          // SUBMITTING.
+          // TODO: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
           this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
@@ -153,8 +202,7 @@ int main() {
   // We don't need this since we're not using HTTP but if it's removed the
   // program
   // doesn't compile :-(
-  h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data,
-                     size_t, size_t) {
+  h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
     const std::string s = "<h1>Hello world!</h1>";
     if (req.getUrl().valueLength == 1) {
       res->end(s.data(), s.length());
@@ -168,8 +216,7 @@ int main() {
     std::cout << "Connected!!!" << std::endl;
   });
 
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
-                         char *message, size_t length) {
+  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
     ws.close();
     std::cout << "Disconnected" << std::endl;
   });
