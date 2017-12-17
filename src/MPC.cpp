@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 size_t N = 10;
-double dt = 0.3;
+double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,7 +21,7 @@ double dt = 0.3;
 const double Lf = 2.67;
 
 // Note: feel free to play around with this or do something completely different
-double ref_v = 10;
+double ref_v = 20;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should establish
@@ -50,28 +50,36 @@ class FG_eval {
 		// The cost is stored is the first element of `fg`.
     // Any additions to the cost should be added to `fg[0]`.
 
+    /* === Reference State Cost === */
+
 		AD<double> cost = 0;
 
-    /* === Reference State Cost === */
+		AD<double> cte_cost_factor = 1.0;
+		AD<double> epsi_cost_factor = 1.0;
+		AD<double> ev_cost_factor = 1.0;
+		AD<double> delta_cost_factor = 10.0;
+		AD<double> a_cost_factor = 1.0;
+		AD<double> deltaD_cost_factor = 10.0;
+		AD<double> aD_cost_factor = 1.0;
 
     // The part of the cost based on the reference state.
 		// consider cte and epsi, plus v/ref_v
 		for (int t = 0; t < N; ++t) {
-			cost += CppAD::pow(vars[cte_start + t], 2);
-			cost += CppAD::pow(vars[epsi_start + t], 2);
-			cost += CppAD::pow(vars[v_start + t] - ref_v, 2);
+			cost += cte_cost_factor * CppAD::pow(vars[cte_start + t], 2);
+			cost += epsi_cost_factor * CppAD::pow(vars[epsi_start + t], 2);
+			cost += ev_cost_factor * CppAD::pow(vars[v_start + t] - ref_v, 2);
 		}
 
     // Minimize the use of actuators (prefer to not change)
 		for (int t = 0; t < N - 1; ++t) {
-			cost += CppAD::pow(vars[delta_start + t], 2);
-			cost += CppAD::pow(vars[a_start + t], 2);
+			cost += delta_cost_factor * CppAD::pow(vars[delta_start + t], 2);
+			cost += a_cost_factor * CppAD::pow(vars[a_start + t], 2);
 		}
 
     // Minimize the value gap between sequential actuations (don't change a lot)
 		for (int t = 0; t < N - 2; ++t) {
-			cost += CppAD::pow(vars[delta_start + t] - vars[delta_start + t + 1], 2);
-			cost += CppAD::pow(vars[a_start + t] - vars[a_start + t + 1], 2);
+			cost += deltaD_cost_factor * CppAD::pow(vars[delta_start + t] - vars[delta_start + t + 1], 2);
+			cost += aD_cost_factor * CppAD::pow(vars[a_start + t] - vars[a_start + t + 1], 2);
 		}
 
 		fg[0] = cost;
@@ -194,7 +202,7 @@ vector<vector<double>> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // Acceleration/decceleration upper and lower limits.
   // Note: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-    vars_lowerbound[i] = -1.0;
+    vars_lowerbound[i] = -0.0;
     vars_upperbound[i] = 1.0;
   }
 
