@@ -189,11 +189,11 @@ int main() {
           // the points in the simulator are connected by a Green line
 
 					// Trim off some of the mpc values for display because they are sticking through the car
-					vector<double>::const_iterator x_first = x_vals.begin() + 2;
+					vector<double>::const_iterator x_first = x_vals.begin() + 1;
 					vector<double>::const_iterator x_last = x_vals.end();
 					vector<double> sub_x_vals(x_first, x_last);
 
-					vector<double>::const_iterator y_first = y_vals.begin() + 2;
+					vector<double>::const_iterator y_first = y_vals.begin() + 1;
 					vector<double>::const_iterator y_last = y_vals.end();
 					vector<double> sub_y_vals(y_first, y_last);
 

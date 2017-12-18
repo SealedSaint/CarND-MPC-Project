@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 size_t N = 10;
-double dt = 0.1;
+double dt = 0.15;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,7 +21,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // Note: feel free to play around with this or do something completely different
-double ref_v = 50 * 0.44704; // mph to m/s since velocity comes in at m/s
+double ref_v = 70 * 0.44704; // mph to m/s since velocity comes in at m/s
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should establish
@@ -54,10 +54,10 @@ class FG_eval {
 
 		AD<double> cost = 0;
 
-		AD<double> cte_cost_factor = 1.0;
-		AD<double> epsi_cost_factor = 10.0;
+		AD<double> cte_cost_factor = 0.5;
+		AD<double> epsi_cost_factor = 20.0;
 		AD<double> ev_cost_factor = 1.0;
-		AD<double> delta_cost_factor = 30.0;
+		AD<double> delta_cost_factor = 40.0;
 		AD<double> a_cost_factor = 1.0;
 		AD<double> deltaD_cost_factor = 10.0;
 		AD<double> aD_cost_factor = 1.0;
