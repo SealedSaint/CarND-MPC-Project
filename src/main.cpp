@@ -89,7 +89,11 @@ int main() {
   // MPC is initialized here!
   MPC mpc;
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+	const int latency_ms = 100; // ms
+	// Same as in MPC.cpp. See there for details
+	const double Lf = 2.67;
+
+  h.onMessage([&mpc, &latency_ms, &Lf](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -126,6 +130,34 @@ int main() {
 
 					double derivative = 3.0*coeffs[3]*pow(x_car, 2) + 2.0*coeffs[2]*x_car + coeffs[1];
 				  double epsi = psi_car - atan(derivative);
+
+					// We have to account for 100ms of latency, so let's predict the state 100ms from now...
+
+					// Recall the equations for the model:
+		      // x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+		      // y_[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+		      // psi_[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
+		      // v_[t+1] = v[t] + a[t] * dt
+		      // cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+					//   # line_val - where_we_are + (additional error from angle error)
+		      // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+					//   # heading - desired_heading + (heading_change)
+
+					double delta = j[1]["steering_angle"]; // Radians
+					delta *= -1.0; // negative because steering angle is reversed in simulator
+					double a = j[1]["throttle"];
+					std::cout << "Steering Angle: " << delta << " and throttle: " << a << std::endl;
+					v *= 0.44704; // mph to m/s
+					psi_car = delta;
+					double dt = latency_ms / 1000; // seconds
+
+					x_car += v * cos(psi_car) * dt;
+					y_car += v * sin(psi_car) * dt;
+					psi_car += v / Lf * delta * dt;
+					cte += v * sin(epsi) * dt;
+					epsi += v / Lf * delta * dt;
+					v += a * dt;
+
 
 					Eigen::VectorXd state(6);
 				  state << x_car, y_car, psi_car, v, cte, epsi;
@@ -189,9 +221,7 @@ int main() {
           //
           // Feel free to play around with this value, but should be able to drive
           // around the track with 100ms latency.
-          //
-          // TODO: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(latency_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
