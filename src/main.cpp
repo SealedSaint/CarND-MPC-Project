@@ -187,13 +187,18 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-					// Transform ptsx and ptsy into car coordinates
-					// transformed = transformVectors(px, py, psi, x_vals, y_vals);
-					// vector<double> x_vals_car = transformed[0];
-					// vector<double> y_vals_car = transformed[1];
 
-					mpc_x_vals = x_vals;
-					mpc_y_vals = y_vals;
+					// Trim off some of the mpc values for display because they are sticking through the car
+					vector<double>::const_iterator x_first = x_vals.begin() + 2;
+					vector<double>::const_iterator x_last = x_vals.end();
+					vector<double> sub_x_vals(x_first, x_last);
+
+					vector<double>::const_iterator y_first = y_vals.begin() + 2;
+					vector<double>::const_iterator y_last = y_vals.end();
+					vector<double> sub_y_vals(y_first, y_last);
+
+					mpc_x_vals = sub_x_vals;
+					mpc_y_vals = sub_y_vals;
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
