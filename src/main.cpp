@@ -146,7 +146,6 @@ int main() {
 					double delta = j[1]["steering_angle"]; // Radians
 					delta *= -1.0; // negative because steering angle is reversed in simulator
 					double a = j[1]["throttle"];
-					std::cout << "Steering Angle: " << delta << " and throttle: " << a << std::endl;
 					v *= 0.44704; // mph to m/s
 					psi_car = delta;
 					double dt = latency_ms / 1000; // seconds

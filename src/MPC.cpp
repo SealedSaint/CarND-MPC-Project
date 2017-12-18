@@ -21,7 +21,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // Note: feel free to play around with this or do something completely different
-double ref_v = 30 * 0.44704; // mph to m/s since velocity comes in at m/s
+double ref_v = 50 * 0.44704; // mph to m/s since velocity comes in at m/s
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should establish
