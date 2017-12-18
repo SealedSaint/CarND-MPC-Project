@@ -54,10 +54,10 @@ class FG_eval {
 
 		AD<double> cost = 0;
 
-		AD<double> cte_cost_factor = 0.5;
-		AD<double> epsi_cost_factor = 20.0;
+		AD<double> cte_cost_factor = 0.3;
+		AD<double> epsi_cost_factor = 30.0;
 		AD<double> ev_cost_factor = 1.0;
-		AD<double> delta_cost_factor = 40.0;
+		AD<double> delta_cost_factor = 50.0;
 		AD<double> a_cost_factor = 1.0;
 		AD<double> deltaD_cost_factor = 10.0;
 		AD<double> aD_cost_factor = 1.0;
